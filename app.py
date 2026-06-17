@@ -56,3 +56,47 @@ def webhook():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
+from pypdf import PdfReader, PdfWriter
+from reportlab.pdfgen import canvas
+import time
+
+def create_pdf_from_template(name):
+    base_pdf = "templates/certificate.pdf"
+
+    output_pdf = f"outputs/{name}_{int(time.time())}.pdf"
+    overlay_pdf = "outputs/overlay.pdf"
+
+    c = canvas.Canvas(overlay_pdf)
+    c.setFont("Helvetica-Bold", 30)
+    c.drawString(200, 400, name)
+    c.save()
+
+    reader = PdfReader(base_pdf)
+    overlay = PdfReader(overlay_pdf)
+
+    writer = PdfWriter()
+
+    page = reader.pages[0]
+    page.merge_page(overlay.pages[0])
+    writer.add_page(page)
+
+    with open(output_pdf, "wb") as f:
+        writer.write(f)
+
+    return output_pdf
+
+def send_pdf(file_path):
+    headers = {
+        "Authorization": f"Bearer {LINE_TOKEN}"
+    }
+
+    files = {
+        "file": open(file_path, "rb")
+    }
+
+    requests.post(
+        "https://api.line.me/v2/bot/message/push",
+        headers=headers,
+        files=files
+    )
