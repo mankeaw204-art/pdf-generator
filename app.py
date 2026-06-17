@@ -1,31 +1,44 @@
 from pypdf import PdfReader, PdfWriter
 from reportlab.pdfgen import canvas
 import os
+import time
+import re
+
+def safe_filename(name):
+    # กันชื่อพัง (ไทย / เว้นวรรค / สัญลักษณ์)
+    return re.sub(r'[^a-zA-Z0-9ก-๙]', '_', name)
+
 
 def create_pdf_from_template(name):
     base_pdf = "templates/certificate.pdf"
-    output_pdf = f"outputs/{name}.pdf"
-    overlay_pdf = "outputs/overlay.pdf"
 
-    # 1. สร้างข้อความ (ชื่อ)
+    safe_name = safe_filename(name)
+
+    output_pdf = f"outputs/{safe_name}_{int(time.time())}.pdf"
+    overlay_pdf = f"outputs/overlay_{int(time.time())}.pdf"
+
+    # 1. สร้าง layer ชื่อ
     c = canvas.Canvas(overlay_pdf)
     c.setFont("Helvetica-Bold", 30)
 
-    # 👉 ตำแหน่งชื่อ (ปรับได้ทีหลัง)
+    # 👉 ปรับตำแหน่งชื่อ
     c.drawString(200, 400, name)
 
     c.save()
 
-    # 2. เอามาซ้อนกับ template
+    # 2. เปิดไฟล์ template + overlay
     reader = PdfReader(base_pdf)
     overlay = PdfReader(overlay_pdf)
 
     writer = PdfWriter()
 
     page = reader.pages[0]
+
+    # merge
     page.merge_page(overlay.pages[0])
     writer.add_page(page)
 
+    # 3. save output
     with open(output_pdf, "wb") as f:
         writer.write(f)
 
