@@ -43,3 +43,16 @@ def create_pdf_from_template(name):
         writer.write(f)
 
     return output_pdf
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    data = request.json
+    print(data)  # เอาไว้ดูว่ามีอะไรส่งมา
+
+    return "OK"
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
